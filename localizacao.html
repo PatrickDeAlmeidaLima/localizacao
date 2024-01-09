@@ -1,0 +1,64 @@
+<script>
+    function saveCityToLocalStorage(city, region) {
+        // Verifica se o navegador suporta o localStorage
+        if (typeof localStorage !== 'undefined') {
+            // Armazena o nome da cidade e a região no localStorage com chaves específicas
+            localStorage.setItem('userCity', city);
+            localStorage.setItem('userRegion', region);
+            console.log(`Cidade (${city}) e região (${region}) armazenadas no localStorage.`);
+        } else {
+            // Exibe uma mensagem de erro no console caso o localStorage não seja suportado
+            console.log('localStorage não suportado no navegador.');
+        }
+    }
+
+    function determineRegion(latitude, longitude) {
+        // Baseado nas coordenadas, determina a região do Brasil
+        if (latitude >= -18.0 && latitude <= -2.0 && longitude >= -63.0 && longitude <= -44.0) {
+            return 'Centro-Oeste';
+        } else if (latitude >= -25.0 && latitude <= -10.0 && longitude >= -50.0 && longitude <= -40.0) {
+            return 'Sudeste';
+        } else if (latitude >= -10.0 && latitude <= 0.0 && longitude >= -50.0 && longitude <= -34.0) {
+            return 'Nordeste';
+        } else {
+            return 'Outra região';
+        }
+    }
+
+    function getLocation() {
+        // Verifica se o navegador suporta a API de Geolocalização
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const latitude = position.coords.latitude;
+                    const longitude = position.coords.longitude;
+                    console.log(latitude, longitude);
+                    const region = determineRegion(latitude, longitude);
+
+                    const apiUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`;
+
+                    fetch(apiUrl)
+                        .then(response => response.json()) // Converte a resposta para JSON
+                        .then(data => {
+                            const city = data.address.city || data.address.town || data.address.village || data.address.county || data.address.state || 'Não encontrado';
+
+                            saveCityToLocalStorage(city, region);
+
+                            console.log(`Cidade: ${city}`);
+                            console.log(`Região: ${region}`);
+                        })
+                        .catch(error => {
+                            console.log(`Erro ao obter a localização: ${error}`);
+                        });
+                },
+                (error) => {
+                    console.log(error.message);
+                }
+            );
+        } else {
+            console.log("O navegador não suporta a API de Geolocalização.");
+        }
+    }
+
+    getLocation();
+</script>
